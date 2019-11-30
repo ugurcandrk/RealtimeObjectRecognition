@@ -22,8 +22,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun initFirebase() {
         try {
-            val conditions = FirebaseModelDownloadConditions.Builder().build()
-            // .requireWifi().build()
+            val conditions = FirebaseModelDownloadConditions.Builder()
+                // .requireWifi().requireCharging.requireDeviceIdle.build()
+                .build()
             val remoteModel = FirebaseCustomRemoteModel.Builder(HOSTED_MODEL_NAME).build()
             FirebaseModelManager.getInstance().download(remoteModel, conditions)
                 .addOnSuccessListener {
@@ -33,15 +34,8 @@ class MainActivity : AppCompatActivity() {
                     finish()
                 }
                 .addOnFailureListener { error ->
-
-                    if (error.cause.toString().equals("com.google.firebase.ml.common.FirebaseMLException: Failed to get model URL")) {
-                        Toast.makeText(
-                            this,
-                            "İnternet Bağlantınızı Kontrol Edin!",
-                            Toast.LENGTH_SHORT
-                        )
-                            .show()
-                    }
+                    Toast.makeText(
+                        this, "İnternet Bağlantınızı Kontrol Edin!", Toast.LENGTH_SHORT).show()
                     Log.e(TAG, error.message)
                 }
         } catch (e: FirebaseMLException) {
