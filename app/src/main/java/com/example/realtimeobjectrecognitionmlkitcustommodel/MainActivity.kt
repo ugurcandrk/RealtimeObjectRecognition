@@ -10,13 +10,13 @@ import com.google.firebase.ml.common.modeldownload.FirebaseModelDownloadConditio
 import com.google.firebase.ml.common.modeldownload.FirebaseModelManager
 import com.google.firebase.ml.custom.FirebaseCustomRemoteModel
 
-class SplashActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val HOSTED_MODEL_NAME = "custom-model"
     private val TAG = "SplashActivity"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash)
+        setContentView(R.layout.activity_main)
         initFirebase()
     }
 
