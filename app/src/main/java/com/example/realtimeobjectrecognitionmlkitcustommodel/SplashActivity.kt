@@ -1,7 +1,6 @@
 package com.example.realtimeobjectrecognitionmlkitcustommodel
 
 import android.content.Intent
-import android.media.MediaPlayer
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -9,7 +8,6 @@ import android.widget.Toast
 import com.google.firebase.ml.common.FirebaseMLException
 import com.google.firebase.ml.common.modeldownload.FirebaseModelDownloadConditions
 import com.google.firebase.ml.common.modeldownload.FirebaseModelManager
-import com.google.firebase.ml.common.modeldownload.FirebaseRemoteModel
 import com.google.firebase.ml.custom.FirebaseCustomRemoteModel
 
 class SplashActivity : AppCompatActivity() {
