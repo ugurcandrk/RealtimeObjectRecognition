@@ -13,7 +13,7 @@ import com.google.firebase.ml.custom.FirebaseCustomRemoteModel
 class MainActivity : AppCompatActivity() {
 
     private val HOSTED_MODEL_NAME = "custom-model"
-    private val TAG = "SplashActivity"
+    private val TAG = "MainActivity"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
