@@ -29,19 +29,18 @@ class RecognitionActivity : AppCompatActivity() {
     private val FLOAT_VALUE = 4
     private val QUANT_VALUE = 1
     private val LABEL_PATH = "labels.txt"
-    private val RESULTS_TO_SHOW = 3
     private val DIM_BATCH_SIZE = 1
     private val DIM_PIXEL_SIZE = 3
     private val DIM_IMG_SIZE_X = 224
     private val DIM_IMG_SIZE_Y = 224
     private val intValues = IntArray(DIM_IMG_SIZE_X * DIM_IMG_SIZE_Y)
-    private val sortedLabels =
+    private val RESULTS_TO_SHOW = 3
+    private var sortedLabels =
         PriorityQueue<AbstractMap.SimpleEntry<String, Float>>(RESULTS_TO_SHOW,
             Comparator<AbstractMap.SimpleEntry<String, Float>> { o1, o2 -> o1.value.compareTo(o2.value) })
-
-    private var mInterpreter: FirebaseModelInterpreter? = null
-    private var mDataOptions: FirebaseModelInputOutputOptions? = null
-    private var mLabelList: List<String>? = null
+    private var labelList: List<String>? = null
+    private var interpreter: FirebaseModelInterpreter? = null
+    private var dataOptions: FirebaseModelInputOutputOptions? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,10 +56,33 @@ class RecognitionActivity : AppCompatActivity() {
         }
     }
 
+    private fun initFirebase() {
+        labelList = loadLabelList()
+        try {
+            val remoteModel = FirebaseCustomRemoteModel.Builder("custom-model").build()
+            val modelOptions = FirebaseModelInterpreterOptions.Builder(remoteModel).build()
+            interpreter = FirebaseModelInterpreter.getInstance(modelOptions)
+            val inputDims =
+                intArrayOf(DIM_BATCH_SIZE, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, DIM_PIXEL_SIZE)
+            val outputDims = intArrayOf(1, labelList!!.size)
+            val dataType = if (isQuant) {
+                FirebaseModelDataType.BYTE
+            } else {
+                FirebaseModelDataType.FLOAT32
+            }
+            dataOptions = FirebaseModelInputOutputOptions.Builder()
+                .setInputFormat(0, dataType, inputDims)
+                .setOutputFormat(0, dataType, outputDims)
+                .build()
+        } catch (e: FirebaseMLException) {
+            Toast.makeText(this, "Error while setting up the model", Toast.LENGTH_LONG)
+        }
+    }
+
     private fun classifyFrame(frame: Frame): Task<List<String>>? {
         val firebaseVisionImage = getVisionImageFromFrame(frame)
         val bitmap = firebaseVisionImage.bitmap
-        if (mInterpreter == null) {
+        if (interpreter == null) {
             Log.e(TAG, "Image classifier has not been initialized; Skipped.")
             val uninitialized = ArrayList<String>()
             uninitialized.add("Uninitialized Classifier.")
@@ -69,12 +91,11 @@ class RecognitionActivity : AppCompatActivity() {
         val imgData = convertBitmapToByteBuffer(bitmap)
         val inputs = FirebaseModelInputs.Builder().add(imgData).build()
         return runInterpreter(inputs)
-
     }
 
     private fun runInterpreter(inputs: FirebaseModelInputs): Task<List<String>> {
-        val result = mDataOptions?.let {
-            mInterpreter!!.run(inputs, it).addOnFailureListener { e ->
+        val result = dataOptions?.let {
+            interpreter!!.run(inputs, it).addOnFailureListener { e ->
                 Log.e(TAG, "Failed to get labels array: ${e.message}")
                 e.printStackTrace()
             }
@@ -92,9 +113,10 @@ class RecognitionActivity : AppCompatActivity() {
     }
 
     private fun getTopLabels(labelProbArray: Array<FloatArray>): List<String> {
-        for (i in mLabelList!!.indices) {
+
+        for (i in labelList!!.indices) {
             sortedLabels.add(
-                AbstractMap.SimpleEntry(mLabelList!![i], labelProbArray[0][i])
+                AbstractMap.SimpleEntry(labelList!![i], labelProbArray[0][i])
             )
             if (sortedLabels.size > RESULTS_TO_SHOW) {
                 sortedLabels.poll()
@@ -114,10 +136,10 @@ class RecognitionActivity : AppCompatActivity() {
     }
 
     private fun getTopLabels(labelProbArray: Array<ByteArray>): List<String> {
-        for (i in mLabelList?.indices!!) {
+        for (i in labelList!!.indices) {
             sortedLabels.add(
                 AbstractMap.SimpleEntry(
-                    mLabelList!![i],
+                    labelList!![i],
                     (labelProbArray[0][i] and 0xff.toByte()) / 255.0f
                 )
             )
@@ -134,7 +156,6 @@ class RecognitionActivity : AppCompatActivity() {
             }
         }
         Log.d(TAG, "labels: $result")
-
         return result
     }
 
@@ -145,8 +166,7 @@ class RecognitionActivity : AppCompatActivity() {
             FLOAT_VALUE
         }
         val imgData = ByteBuffer.allocateDirect(
-            value *
-                    DIM_BATCH_SIZE * DIM_IMG_SIZE_X * DIM_IMG_SIZE_Y * DIM_PIXEL_SIZE
+            value * DIM_BATCH_SIZE * DIM_IMG_SIZE_X * DIM_IMG_SIZE_Y * DIM_PIXEL_SIZE
         )
         imgData.order(ByteOrder.nativeOrder())
         val scaledBitmap = Bitmap.createScaledBitmap(
@@ -184,29 +204,6 @@ class RecognitionActivity : AppCompatActivity() {
             .setHeight(frame.size.height)
             .build()
         return FirebaseVisionImage.fromByteArray(data, imageMetaData)
-    }
-
-    private fun initFirebase() {
-        mLabelList = loadLabelList()
-        try {
-            val remoteModel = FirebaseCustomRemoteModel.Builder("custom-model").build()
-            val modelOptions = FirebaseModelInterpreterOptions.Builder(remoteModel).build()
-            mInterpreter = FirebaseModelInterpreter.getInstance(modelOptions)
-            val inputDims =
-                intArrayOf(DIM_BATCH_SIZE, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, DIM_PIXEL_SIZE)
-            val outputDims = intArrayOf(1, mLabelList!!.size)
-            val dataType = if (isQuant) {
-                FirebaseModelDataType.BYTE
-            } else {
-                FirebaseModelDataType.FLOAT32
-            }
-            mDataOptions = FirebaseModelInputOutputOptions.Builder()
-                .setInputFormat(0, dataType, inputDims)
-                .setOutputFormat(0, dataType, outputDims)
-                .build()
-        } catch (e: FirebaseMLException) {
-            Toast.makeText(this, "Error while setting up the model", Toast.LENGTH_LONG)
-        }
     }
 
     private fun loadLabelList(): List<String>? {
