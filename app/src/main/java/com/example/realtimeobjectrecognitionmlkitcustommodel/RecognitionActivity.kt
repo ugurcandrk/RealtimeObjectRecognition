@@ -49,9 +49,9 @@ class RecognitionActivity : AppCompatActivity() {
         cameraView.setLifecycleOwner(this)
         cameraView.addFrameProcessor {
             classifyFrame(it)?.addOnSuccessListener { result ->
-                txtDetectedObject.text = result[0]
+                txtDetectedObject.text = result[2]
                 txtDetectedObject2.text = result[1]
-                txtDetectedObject3.text = result[2]
+                txtDetectedObject3.text = result[0]
             }
         }
     }
