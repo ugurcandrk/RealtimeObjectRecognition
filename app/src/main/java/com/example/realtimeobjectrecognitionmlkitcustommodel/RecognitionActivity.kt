@@ -38,7 +38,7 @@ class RecognitionActivity : AppCompatActivity() {
     private var sortedLabels =
         PriorityQueue<AbstractMap.SimpleEntry<String, Float>>(RESULTS_TO_SHOW,
             Comparator<AbstractMap.SimpleEntry<String, Float>> { o1, o2 -> o1.value.compareTo(o2.value) })
-    private var labelList: List<String>? = null
+    private lateinit var labelList: List<String>
     private var interpreter: FirebaseModelInterpreter? = null
     private var dataOptions: FirebaseModelInputOutputOptions? = null
 
@@ -64,7 +64,7 @@ class RecognitionActivity : AppCompatActivity() {
             interpreter = FirebaseModelInterpreter.getInstance(modelOptions)
             val inputDims =
                 intArrayOf(DIM_BATCH_SIZE, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, DIM_PIXEL_SIZE)
-            val outputDims = intArrayOf(1, labelList!!.size)
+            val outputDims = intArrayOf(1, labelList.size)
             val dataType = if (isQuant) {
                 FirebaseModelDataType.BYTE
             } else {
@@ -114,9 +114,9 @@ class RecognitionActivity : AppCompatActivity() {
 
     private fun getTopLabels(labelProbArray: Array<FloatArray>): List<String> {
 
-        for (i in labelList!!.indices) {
+        for (i in labelList.indices) {
             sortedLabels.add(
-                AbstractMap.SimpleEntry(labelList!![i], labelProbArray[0][i])
+                AbstractMap.SimpleEntry(labelList[i], labelProbArray[0][i])
             )
             if (sortedLabels.size > RESULTS_TO_SHOW) {
                 sortedLabels.poll()
@@ -136,10 +136,10 @@ class RecognitionActivity : AppCompatActivity() {
     }
 
     private fun getTopLabels(labelProbArray: Array<ByteArray>): List<String> {
-        for (i in labelList!!.indices) {
+        for (i in labelList.indices) {
             sortedLabels.add(
                 AbstractMap.SimpleEntry(
-                    labelList!![i],
+                    labelList[i],
                     (labelProbArray[0][i] and 0xff.toByte()) / 255.0f
                 )
             )
@@ -206,7 +206,7 @@ class RecognitionActivity : AppCompatActivity() {
         return FirebaseVisionImage.fromByteArray(data, imageMetaData)
     }
 
-    private fun loadLabelList(): List<String>? {
+    private fun loadLabelList(): List<String> {
         val labelList = ArrayList<String>()
         try {
             BufferedReader(InputStreamReader(this.assets.open(LABEL_PATH))).use { reader ->
